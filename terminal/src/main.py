@@ -71,6 +71,8 @@ class TerminalEmulator(tk.Tk):
                 "echo <text>: Print the specified text\n"
                 "mkdir <directory_name>: Create a new directory\n"
                 "settings -<setting> <value>: Change the specified setting\n"
+                "tasklist: Display all running processes\n"
+                "systeminfo: Display system information\n"
             )
             self.text_widget.insert(tk.END, "\n\n" + help_text)
             return  # Avoid updating the prompt after showing help
@@ -117,6 +119,20 @@ class TerminalEmulator(tk.Tk):
             else:
                 self.text_widget.insert(tk.END, f"\nInvalid setting or value type for: {setting_key}\n")
             return  # Avoid updating the prompt after settings change
+        elif command == "tasklist":
+            try:
+                output = subprocess.check_output("tasklist", shell=True).decode()
+                self.text_widget.insert(tk.END, f"\n{output}\n")
+            except Exception as e:
+                self.text_widget.insert(tk.END, f"\nFailed to retrieve task list: {str(e)}\n")
+            return  # Avoid updating the prompt after showing task list
+        elif command == "systeminfo":
+            try:
+                output = subprocess.check_output("systeminfo", shell=True).decode()
+                self.text_widget.insert(tk.END, f"\n{output}\n")
+            except Exception as e:
+                self.text_widget.insert(tk.END, f"\nFailed to retrieve system information: {str(e)}\n")
+            return  # Avoid updating the prompt after showing system info
         self.text_widget.delete(line_index, "insert lineend")
         self.update_prompt()
 
