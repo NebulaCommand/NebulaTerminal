@@ -1,22 +1,29 @@
 import tkinter as tk
 import os
 import subprocess
+from config import settings  # Import settings from config.py
 
 class TerminalEmulator(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("Nebula Terminal")
-        self.geometry("800x600")  # Size similar to Windows 11 terminal
-        self.configure(bg='black')
-        self.attributes('-alpha', 0.8)  # Set transparency
-
-        # Create a text widget to simulate terminal output with a smooth font and larger size
-        self.text_widget = tk.Text(self, bg='black', fg='white', insertbackground='white', font=('Arial', 12))
+        self.apply_settings()
+        self.text_widget = tk.Text(self, bg=self.bg_color, fg=self.font_color, insertbackground=self.cursor_color, font=(self.font_family, self.font_size))
         self.text_widget.pack(expand=True, fill='both')
         self.current_directory = os.path.expanduser("~/Downloads")
         self.text_widget.bind("<Return>", self.process_command)
         self.text_widget.bind("<KeyRelease>", self.update_prompt_on_newline)
         self.initial_prompt()
+
+    def apply_settings(self):
+        self.title("Nebula Terminal")
+        self.geometry("800x600")  # Size similar to Windows 11 terminal
+        self.bg_color = settings['background_color']
+        self.font_color = settings['font_color']
+        self.cursor_color = settings.get('cursor_color', self.font_color)  # Use font color as default if cursor_color is not set
+        self.font_family = settings['font_family']
+        self.font_size = settings['font_size']
+        self.configure(bg=self.bg_color)
+        self.attributes('-alpha', settings['transparency_level'] if settings['transparency'] else 1.0)  # Set transparency
 
     def initial_prompt(self):
         prompt = f"{self.current_directory}> "
@@ -63,6 +70,7 @@ class TerminalEmulator(tk.Tk):
                 "dir: List the contents of the current directory\n"
                 "echo <text>: Print the specified text\n"
                 "mkdir <directory_name>: Create a new directory\n"
+                "settings -<setting> <value>: Change the specified setting\n"
             )
             self.text_widget.insert(tk.END, "\n\n" + help_text)
             return  # Avoid updating the prompt after showing help
@@ -98,6 +106,17 @@ class TerminalEmulator(tk.Tk):
             else:
                 self.text_widget.insert(tk.END, "\nUsage: mkdir <directory_name>\n")
             return  # Avoid updating the prompt after mkdir operation
+        elif command == "settings" and len(command_parts) > 2:
+            setting_key = command_parts[1].lstrip('-')
+            setting_value = command_parts[2]
+            if setting_key in settings and isinstance(settings[setting_key], (int, float, str)):
+                settings[setting_key] = type(settings[setting_key])(setting_value)
+                self.apply_settings()  # Reapply settings to update the terminal
+                self.text_widget.insert(tk.END, f"\nSetting updated: {setting_key} = {setting_value}\n")
+                self.update_prompt()  # Update the prompt to reflect any changes in settings
+            else:
+                self.text_widget.insert(tk.END, f"\nInvalid setting or value type for: {setting_key}\n")
+            return  # Avoid updating the prompt after settings change
         self.text_widget.delete(line_index, "insert lineend")
         self.update_prompt()
 
