@@ -1,5 +1,6 @@
 import tkinter as tk
 import os
+import subprocess
 
 class TerminalEmulator(tk.Tk):
     def __init__(self):
@@ -58,9 +59,15 @@ class TerminalEmulator(tk.Tk):
                 "go <path>: Navigate to a directory\n"
                 "cls, clear: Clear the terminal screen\n"
                 "help: Show this help message\n"
+                "code: Open the current directory in Visual Studio Code\n"
             )
             self.text_widget.insert(tk.END, "\n\n" + help_text)
             return  # Avoid updating the prompt after showing help
+        elif command == "code":
+            try:
+                subprocess.run(["code", self.current_directory])
+            except FileNotFoundError:
+                self.text_widget.insert(tk.END, "\nVisual Studio Code is not installed or not found in PATH.\n")
         self.text_widget.delete(line_index, "insert lineend")
         self.update_prompt()
 
