@@ -10,8 +10,8 @@ class TerminalEmulator(tk.Tk):
         self.configure(bg='black')
         self.attributes('-alpha', 0.8)  # Set transparency
 
-        # Create a text widget to simulate terminal output
-        self.text_widget = tk.Text(self, bg='black', fg='white', insertbackground='white')
+        # Create a text widget to simulate terminal output with a smooth font and larger size
+        self.text_widget = tk.Text(self, bg='black', fg='white', insertbackground='white', font=('Arial', 12))
         self.text_widget.pack(expand=True, fill='both')
         self.current_directory = os.path.expanduser("~/Downloads")
         self.text_widget.bind("<Return>", self.process_command)
@@ -60,6 +60,9 @@ class TerminalEmulator(tk.Tk):
                 "cls, clear: Clear the terminal screen\n"
                 "help: Show this help message\n"
                 "code: Open the current directory in Visual Studio Code\n"
+                "dir: List the contents of the current directory\n"
+                "echo <text>: Print the specified text\n"
+                "mkdir <directory_name>: Create a new directory\n"
             )
             self.text_widget.insert(tk.END, "\n\n" + help_text)
             return  # Avoid updating the prompt after showing help
@@ -68,6 +71,33 @@ class TerminalEmulator(tk.Tk):
                 subprocess.run(["code", self.current_directory])
             except FileNotFoundError:
                 self.text_widget.insert(tk.END, "\nVisual Studio Code is not installed or not found in PATH.\n")
+        elif command == "dir":
+            try:
+                directory_contents = []
+                for root, dirs, files in os.walk(self.current_directory):
+                    for name in files:
+                        if "__pycache__" not in name:
+                            directory_contents.append(os.path.join(root, name))
+                directory_contents_str = "\n".join(directory_contents)
+                self.text_widget.insert(tk.END, f"\n\n{directory_contents_str}\n")
+            except Exception as e:
+                self.text_widget.insert(tk.END, f"\nError listing directory contents: {str(e)}\n")
+            return  # Avoid updating the prompt after showing directory contents
+        elif command == "echo":
+            echo_text = " ".join(command_parts[1:])
+            self.text_widget.insert(tk.END, f"\n{echo_text}\n")
+            return  # Avoid updating the prompt after echoing text
+        elif command == "mkdir":
+            if len(command_parts) > 1:
+                new_dir = command_parts[1]
+                try:
+                    os.makedirs(os.path.join(self.current_directory, new_dir), exist_ok=True)
+                    self.text_widget.insert(tk.END, f"\nDirectory created: {new_dir}\n")
+                except Exception as e:
+                    self.text_widget.insert(tk.END, f"\nError creating directory: {str(e)}\n")
+            else:
+                self.text_widget.insert(tk.END, "\nUsage: mkdir <directory_name>\n")
+            return  # Avoid updating the prompt after mkdir operation
         self.text_widget.delete(line_index, "insert lineend")
         self.update_prompt()
 
