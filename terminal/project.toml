@@ -1,0 +1,11 @@
+[project]
+name = "terminal"
+version = "0.1.0"
+description = ""
+main_script = "./src/main.py"
+
+[packages]
+PyQt5 = "5.15.10"
+
+[scripts]
+upgrade-pip = "python -m pip install --upgrade pip"
