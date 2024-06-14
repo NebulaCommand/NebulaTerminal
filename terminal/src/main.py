@@ -8,6 +8,7 @@ class TerminalEmulator(tk.Tk):
         super().__init__()
         self.apply_settings()
         self.text_widget = tk.Text(self, bg=self.bg_color, fg=self.font_color, insertbackground=self.cursor_color, font=(self.font_family, self.font_size))
+        self.text_widget.tag_configure("bold", font=(self.font_family, self.font_size, "bold"))  # Configure bold tag for directory lines
         self.text_widget.pack(expand=True, fill='both')
         self.current_directory = os.path.expanduser("~/Downloads")
         self.text_widget.bind("<Return>", self.process_command)
@@ -27,7 +28,7 @@ class TerminalEmulator(tk.Tk):
 
     def initial_prompt(self):
         prompt = f"{self.current_directory}> "
-        self.text_widget.insert(tk.END, prompt)
+        self.text_widget.insert(tk.END, prompt, "bold")  # Apply bold tag to prompt
         self.text_widget.see(tk.END)
 
     def update_prompt_on_newline(self, event):
@@ -37,13 +38,19 @@ class TerminalEmulator(tk.Tk):
     def update_prompt(self):
         prompt = f"{self.current_directory}> "
         self.text_widget.delete("insert linestart", "insert lineend")
-        self.text_widget.insert("insert", prompt)
+        self.text_widget.insert("insert", prompt, "bold")  # Apply bold tag to prompt
         self.text_widget.see(tk.END)
 
     def process_command(self, event):
         line_index = self.text_widget.index("insert linestart")
         line_text = self.text_widget.get(line_index, "insert lineend")
-        command_parts = line_text.strip().split("> ")[-1].split()
+        command_parts = line_text.strip().split("> ")
+        if len(command_parts) > 1:
+            command_parts = command_parts[-1].split()
+        else:
+            command_parts = []
+        if len(command_parts) == 0:
+            return  # No command entered, just update the prompt
         command = command_parts[0]
         if command == "exit":
             self.current_directory = os.path.expanduser("~")
