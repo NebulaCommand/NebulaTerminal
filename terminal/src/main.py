@@ -254,6 +254,3 @@ def initialize_terminal():
 
 if __name__ == "__main__":
     initialize_terminal()
-
-
-
