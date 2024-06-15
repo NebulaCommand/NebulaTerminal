@@ -1,4 +1,9 @@
-- Implement theming
-- Implement better ways of saving astead of just storing the users IP address
-- Make it so with the openfile command, you can also edit the file and save it just from the terminal
-- More to come.
+# Features I want to add 
+- Theming 
+- Better way to save the users data astead of using IPs
+- More customizable settings
+
+# Bugs that need to be fixed 
+- The customizable settings are not working
+- The themening isn't working
+- Autocompletion and command suggesting isn't working
