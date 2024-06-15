@@ -27,22 +27,27 @@ class TerminalEmulator(tk.Tk):
         self.font_size = settings['font_size']
         self.configure(bg=self.bg_color)
         self.attributes('-alpha', settings['transparency_level'] if settings['transparency'] else 1.0)  # Set transparency
+        self.resizable(True, True)  # Allow the window to be resizable
 
     def initial_prompt(self):
         # Display initializing messages
         self.text_widget.insert(tk.END, "Initializing Terminal...\n", "bold")
         self.text_widget.insert(tk.END, f"User: {getpass.getuser()}\n", "bold")
         self.text_widget.insert(tk.END, "Access Granted\n", "bold")
-        for i in range(5, 0, -1):
-            self.text_widget.delete("end-2l", "end-1l")
-            self.text_widget.insert(tk.END, f"Continuing in {i}...\n", "bold")
-            self.text_widget.update()
-            time.sleep(1)
-        self.text_widget.delete("1.0", tk.END)
-        prompt = f"{self.current_directory}> "
-        self.text_widget.insert(tk.END, prompt, "bold")  # Apply bold tag to prompt
-        self.text_widget.see(tk.END)
-
+        
+        def countdown(i):
+            if i > 0:
+                self.text_widget.delete("end-2l", "end-1l")
+                self.text_widget.insert(tk.END, f"Continuing in {i}...\n", "bold")
+                self.text_widget.update()
+                self.after(1000, countdown, i-1)
+            else:
+                self.text_widget.delete("1.0", tk.END)
+                prompt = f"{self.current_directory}> "
+                self.text_widget.insert(tk.END, prompt, "bold")  # Apply bold tag to prompt
+                self.text_widget.see(tk.END)
+        
+        countdown(5)
     def update_prompt_on_newline(self, event):
         if event.keysym == "Return":
             self.update_prompt()
