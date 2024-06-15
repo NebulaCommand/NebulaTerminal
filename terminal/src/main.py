@@ -1,7 +1,9 @@
 import tkinter as tk
 import os
 import subprocess
+import getpass  # Import getpass to get the username
 from config import settings  # Import settings from config.py
+import time
 
 class TerminalEmulator(tk.Tk):
     def __init__(self):
@@ -27,6 +29,16 @@ class TerminalEmulator(tk.Tk):
         self.attributes('-alpha', settings['transparency_level'] if settings['transparency'] else 1.0)  # Set transparency
 
     def initial_prompt(self):
+        # Display initializing messages
+        self.text_widget.insert(tk.END, "Initializing Terminal...\n", "bold")
+        self.text_widget.insert(tk.END, f"User: {getpass.getuser()}\n", "bold")
+        self.text_widget.insert(tk.END, "Access Granted\n", "bold")
+        for i in range(5, 0, -1):
+            self.text_widget.delete("end-2l", "end-1l")
+            self.text_widget.insert(tk.END, f"Continuing in {i}...\n", "bold")
+            self.text_widget.update()
+            time.sleep(1)
+        self.text_widget.delete("1.0", tk.END)
         prompt = f"{self.current_directory}> "
         self.text_widget.insert(tk.END, prompt, "bold")  # Apply bold tag to prompt
         self.text_widget.see(tk.END)
@@ -161,3 +173,4 @@ def initialize_terminal():
 
 if __name__ == "__main__":
     initialize_terminal()
+
