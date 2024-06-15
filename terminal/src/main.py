@@ -1,12 +1,12 @@
 import difflib
-import tkinter as tk
-import os
-import subprocess
-import getpass  # Import getpass to get the username
-from config import settings  # Import settings from config.py
-import time
 import glob
+import os
 import socket
+import subprocess
+import time
+import tkinter as tk
+from config import settings  # Import settings from config.py
+import getpass  # Import getpass to get the username
 
 class TerminalEmulator(tk.Tk):
     def __init__(self):
