@@ -4,7 +4,7 @@ import subprocess
 import getpass  # Import getpass to get the username
 from config import settings  # Import settings from config.py
 import time
-import glob  # Import glob for file path completion
+import glob  
 
 class TerminalEmulator(tk.Tk):
     def __init__(self):
@@ -12,6 +12,8 @@ class TerminalEmulator(tk.Tk):
         self.apply_settings()
         self.text_widget = tk.Text(self, bg=self.bg_color, fg=self.font_color, insertbackground=self.cursor_color, font=(self.font_family, self.font_size))
         self.text_widget.tag_configure("bold", font=(self.font_family, self.font_size, "bold"))  # Configure bold tag for directory lines
+        self.text_widget.tag_configure("command", foreground="blue")  # Syntax highlighting for commands
+        self.text_widget.tag_configure("path", foreground="green")  # Syntax highlighting for paths
         self.text_widget.pack(expand=True, fill='both')
         self.current_directory = os.path.expanduser("~/Downloads")
         self.text_widget.bind("<Return>", self.process_command)
@@ -62,7 +64,7 @@ class TerminalEmulator(tk.Tk):
                 matches = [c for c in commands if c.startswith(parts[0])]
                 if matches:
                     self.text_widget.delete(line_index, "insert lineend")
-                    self.text_widget.insert(line_index, matches[0] + " ")
+                    self.text_widget.insert(line_index, matches[0] + " ", "command")
             else:
                 # File path autocomplete
                 path = parts[-1]
@@ -74,7 +76,7 @@ class TerminalEmulator(tk.Tk):
                     common_prefix = os.path.commonprefix(files)
                     if common_prefix != path:
                         self.text_widget.delete(f"{line_index}+{len(parts[0])}c", "insert lineend")
-                        self.text_widget.insert(f"{line_index}+{len(parts[0])}c", common_prefix)
+                        self.text_widget.insert(f"{line_index}+{len(parts[0])}c", common_prefix, "path")
         return "break"  # Prevent default tab behavior
 
     def update_prompt_on_newline(self, event):
@@ -109,7 +111,7 @@ class TerminalEmulator(tk.Tk):
             if os.path.exists(new_path):
                 self.current_directory = new_path
             else:
-                self.text_widget.insert(tk.END, f"\nDirectory not found: {new_path}\n")
+                self.text_widget.insert(tk.END, f"\nDirectory not found: {new_path}. Please check the path and try again.\n")
                 return  # Avoid updating the prompt after showing error message
         elif command == "cls" or command == "clear":
             self.text_widget.delete("1.0", tk.END)
@@ -138,7 +140,7 @@ class TerminalEmulator(tk.Tk):
                     file_contents = file.read()
                 self.text_widget.insert(tk.END, f"\n{file_contents}\n")
             except FileNotFoundError:
-                self.text_widget.insert(tk.END, f"\nFile not found: {file_path}\n")
+                self.text_widget.insert(tk.END, f"\nFile not found: {file_path}. Please verify the file path and try again.\n")
             except Exception as e:
                 self.text_widget.insert(tk.END, f"\nError opening file: {str(e)}\n")
             return  # Avoid updating the prompt after displaying file contents
@@ -146,7 +148,7 @@ class TerminalEmulator(tk.Tk):
             try:
                 subprocess.run(["code", self.current_directory])
             except FileNotFoundError:
-                self.text_widget.insert(tk.END, "\nVisual Studio Code is not installed or not found in PATH.\n")
+                self.text_widget.insert(tk.END, "\nVisual Studio Code is not installed or not found in PATH. Please install it or check your PATH settings.\n")
         elif command == "dir":
             try:
                 directory_contents = []
@@ -183,28 +185,28 @@ class TerminalEmulator(tk.Tk):
                 self.text_widget.insert(tk.END, f"\nSetting updated: {setting_key} = {setting_value}\n")
                 self.update_prompt()  # Update the prompt to reflect any changes in settings
             else:
-                self.text_widget.insert(tk.END, f"\nInvalid setting or value type for: {setting_key}\n")
+                self.text_widget.insert(tk.END, f"\nInvalid setting or value type for: {setting_key}. Please check the setting name and value type.\n")
             return  # Avoid updating the prompt after settings change
         elif command == "tasklist":
             try:
                 output = subprocess.check_output("tasklist", shell=True).decode()
                 self.text_widget.insert(tk.END, f"\n{output}\n")
             except Exception as e:
-                self.text_widget.insert(tk.END, f"\nFailed to retrieve task list: {str(e)}\n")
+                self.text_widget.insert(tk.END, f"\nFailed to retrieve task list: {str(e)}. Please check your system permissions or configuration.\n")
             return  # Avoid updating the prompt after showing task list
         elif command == "systeminfo":
             try:
                 output = subprocess.check_output("systeminfo", shell=True).decode()
                 self.text_widget.insert(tk.END, f"\n{output}\n")
             except Exception as e:
-                self.text_widget.insert(tk.END, f"\nFailed to retrieve system information: {str(e)}\n")
+                self.text_widget.insert(tk.END, f"\nFailed to retrieve system information: {str(e)}. Please check your system permissions or configuration.\n")
             return  # Avoid updating the prompt after showing system info
         elif command == "open":
             try:
                 subprocess.run(["explorer", self.current_directory], check=True)
                 self.text_widget.insert(tk.END, f"\nOpened directory: {self.current_directory}\n")
             except Exception as e:
-                self.text_widget.insert(tk.END, f"\nFailed to open directory: {str(e)}\n")
+                self.text_widget.insert(tk.END, f"\nFailed to open directory: {str(e)}. Please check your system settings or permissions.\n")
             return  # Avoid updating the prompt after opening directory
         self.update_prompt()
 def initialize_terminal():
