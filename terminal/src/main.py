@@ -217,6 +217,8 @@ class TerminalEmulator(tk.Tk):
                     "  mkdir <directory_name>: Create a new directory\n"
                     "  open: Open the current directory in the system's default file manager\n"
                     "  openfile <file_path>: Open and display the contents of a file\n"
+                    "  rename <old_file_path> <new_file_path>: Rename a file or directory.\n"
+                    "  diff <file1> <file2>: Compare the contents of two files\n"
                     "\nUtility Commands:\n"
                     "  code: Open the current directory in Visual Studio Code\n"
                     "  echo <text>: Print the specified text\n"
@@ -226,34 +228,36 @@ class TerminalEmulator(tk.Tk):
                     "  issue <issue_text>: Submit an issue to the Nebula Terminal Development Community\n"
                     "  ping <target>: Ping the specified target\n"
                     "  ssh <target>: Establish an SSH connection to the specified target\n"
-                    "  diff <file1> <file2>: Compare the contents of two files\n"
-                    "  listports: List all open ports on the system\n"
+                    "  listports: List all open ports on the system\n",
+                    "  git <command>: Execute a git command.\n"
                 )
-                self.text_widget.insert(tk.END, "\n\n" + help_text)
+                self.text_widget.insert(tk.END, "\n\n" + ''.join(help_text))
             elif len(command_parts) > 1:
                 detailed_command = command_parts[1]
                 detailed_help = {
-                    "exit": "exit: Exit the terminal or go to the previous directory.",
-                    "go": "go <path>: Navigate to the specified directory path.",
-                    "cls": "cls, clear: Clear the terminal screen.",
-                    "clear": "cls, clear: Clear the terminal screen.",
-                    "help": "help: Show this help message or detailed help for a specific command.",
-                    "code": "code: Open the current directory in Visual Studio Code.",
-                    "dir": "dir: List all files and directories in the current directory.",
-                    "echo": "echo <text>: Print the specified text to the terminal.",
-                    "mkdir": "mkdir <directory_name>: Create a new directory with the specified name.",
-                    "settings": "settings -<setting> <value>: Change the specified setting to the given value.",
-                    "tasklist": "tasklist: Display all currently running processes.",
-                    "systeminfo": "systeminfo: Display detailed system information.",
-                    "edit": "edit <file>: Open and display the contents of the specified file.",
-                    "open": "open: Open the current directory in the system's default file manager.",
-                    "issue": "issue <issue_text>: Submit an issue to the Nebula Terminal Development Community.",
-                    "openfile": "openfile <file_path>: Open and display the contents of the specified file.",
-                    "ping": "ping <target>: Ping the specified target.",
-                    "ssh": "ssh <target>: Establish an SSH connection to the specified target.",
-                    "date": "date: Display the current date and time.",
-                    "diff": "diff <file1> <file2>: Compare the contents of two files.",
-                    "listports": "listports: List all open ports on the system."
+                    "exit": "exit: Exit the terminal or go to the previous directory.\n",
+                    "go": "go <path>: Navigate to the specified directory path.\n",
+                    "cls": "cls, clear: Clear the terminal screen.\n",
+                    "clear": "cls, clear: Clear the terminal screen.\n",
+                    "help": "help: Show this help message or detailed help for a specific command.\n",
+                    "code": "code: Open the current directory in Visual Studio Code.\n",
+                    "dir": "dir: List all files and directories in the current directory.\n",
+                    "echo": "echo <text>: Print the specified text to the terminal.\n",
+                    "mkdir": "mkdir <directory_name>: Create a new directory with the specified name.\n",
+                    "settings": "settings -<setting> <value>: Change the specified setting to the given value.\n",
+                    "tasklist": "tasklist: Display all currently running processes.\n",
+                    "systeminfo": "systeminfo: Display detailed system information.\n",
+                    "edit": "edit <file>: Open and display the contents of the specified file.\n",
+                    "open": "open: Open the current directory in the system's default file manager.\n",
+                    "issue": "issue <issue_text>: Submit an issue to the Nebula Terminal Development Community.\n",
+                    "openfile": "openfile <file_path>: Open and display the contents of the specified file.\n",
+                    "ping": "ping <target>: Ping the specified target.\n",
+                    "ssh": "ssh <target>: Establish an SSH connection to the specified target.\n",
+                    "date": "date: Display the current date and time.\n",
+                    "diff": "diff <file1> <file2>: Compare the contents of two files.\n",
+                    "listports": "listports: List all open ports on the system.\n",
+                    "rename": "rename <old_file_path> <new_file_path>: Rename a file or directory.\n",
+                    "git": "git <command>: Execute a git command.\n"
                 }
                 help_message = detailed_help.get(detailed_command, f"No detailed help available for: {detailed_command}")
                 self.text_widget.insert(tk.END, "\n\n" + help_message)
@@ -435,6 +439,33 @@ class TerminalEmulator(tk.Tk):
             except Exception as e:
                 self.text_widget.insert(tk.END, f"\nFailed to list open ports: {str(e)}\n")
             return  # Avoid updating the prompt after listing ports
+        elif command == "rename" and len(command_parts) > 2:
+            old_file_path = os.path.join(self.current_directory, command_parts[1])
+            new_file_path = os.path.join(self.current_directory, command_parts[2])
+            try:
+                os.rename(old_file_path, new_file_path)
+                self.text_widget.insert(tk.END, f"\nFile renamed from {command_parts[1]} to {command_parts[2]}\n")
+            except FileNotFoundError:
+                self.text_widget.insert(tk.END, f"\nFile not found: {old_file_path}. Please verify the file path and try again.\n")
+            except Exception as e:
+                self.text_widget.insert(tk.END, f"\nError renaming file: {str(e)}\n")
+            return  # Avoid updating the prompt after renaming file
+        elif command.startswith("git clone"):
+            try:
+                import subprocess
+                git_command = command.split()
+                if len(git_command) < 3:
+                    self.text_widget.insert(tk.END, "\nUsage: git clone <repository-url>\n")
+                else:
+                    repo_url = git_command[2]
+                    result = subprocess.run(["git", "clone", repo_url, self.current_directory], capture_output=True, text=True)
+                    if result.returncode == 0:
+                        self.text_widget.insert(tk.END, f"\nSuccessfully cloned {repo_url} into {self.current_directory}\n")
+                    else:
+                        self.text_widget.insert(tk.END, f"\nFailed to clone repository: {result.stderr}\n")
+            except Exception as e:
+                self.text_widget.insert(tk.END, f"\nError executing git clone: {str(e)}\n")
+            return  # Avoid updating the prompt after git clone command
         else:
             self.handle_unknown_command(command)
             return        
