@@ -1,4 +1,5 @@
 # Features I want to add 
+- Add a login system for certain features in the future
 - Theming 
 - Better way to save the users data astead of using IPs
 - More customizable settings
