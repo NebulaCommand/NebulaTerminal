@@ -168,6 +168,22 @@ class TerminalEmulator(tk.Tk):
     def update_prompt_on_newline(self, event):
         if event.keysym == "Return":
             self.update_prompt()
+    
+    def optimize_terminal_performance(self):
+        # Increase the text widget's performance by reducing redraws
+        self.text_widget.configure(autoseparators=False, maxundo=-1)
+
+        # Optimize the handling of large volumes of output
+        self.text_widget.bind("<Configure>", self.handle_large_output)
+
+    def handle_large_output(self, event=None):
+        # Temporarily disable updates to handle large volumes of output efficiently
+        self.text_widget.configure(state='disabled')
+        self.text_widget.after(100, self.enable_text_widget_updates)
+
+    def enable_text_widget_updates(self):
+        # Re-enable updates after processing is complete
+        self.text_widget.configure(state='normal')
 
     def update_prompt(self):
         prompt = f"{self.current_directory}> "
