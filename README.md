@@ -32,7 +32,25 @@ Nebula is a revolutionary terminal emulator designed to surpass the limitations 
 
 ### **Installation**
 
-* Coming soon
+To install Nebula, follow these steps:
+
+1. **Clone the repository:**
+   ```sh
+   git clone https://github.com/NebulaCommand/NebulaTerminal
+   cd NebulaTerminal/terminal
+   ```
+
+2. **Install dependencies:**
+   ```sh
+   ppm add tkinter
+   ```
+
+3. **Run the terminal emulator:**
+   ```sh
+   python src/main.py
+   ```
+
+Enjoy your new user friendly terminal experience!
 
 ### **Documentation**
 
