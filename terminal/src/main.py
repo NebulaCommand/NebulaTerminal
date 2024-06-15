@@ -4,6 +4,7 @@ import subprocess
 import getpass  # Import getpass to get the username
 from config import settings  # Import settings from config.py
 import time
+import glob  # Import glob for file path completion
 
 class TerminalEmulator(tk.Tk):
     def __init__(self):
@@ -15,6 +16,7 @@ class TerminalEmulator(tk.Tk):
         self.current_directory = os.path.expanduser("~/Downloads")
         self.text_widget.bind("<Return>", self.process_command)
         self.text_widget.bind("<KeyRelease>", self.update_prompt_on_newline)
+        self.text_widget.bind("<Tab>", self.autocomplete, add="+")  # Bind tab key for autocomplete
         self.initial_prompt()
 
     def apply_settings(self):
@@ -48,6 +50,33 @@ class TerminalEmulator(tk.Tk):
                 self.text_widget.see(tk.END)
         
         countdown(5)
+
+    def autocomplete(self, event):
+        line_index = self.text_widget.index("insert linestart")
+        line_text = self.text_widget.get(line_index, "insert lineend").strip()
+        if line_text:
+            parts = line_text.split()
+            if len(parts) == 1:
+                # Command autocomplete
+                commands = ["exit", "go", "cls", "clear", "help", "code", "dir", "echo", "mkdir", "settings", "tasklist", "systeminfo", "edit", "open"]
+                matches = [c for c in commands if c.startswith(parts[0])]
+                if matches:
+                    self.text_widget.delete(line_index, "insert lineend")
+                    self.text_widget.insert(line_index, matches[0] + " ")
+            else:
+                # File path autocomplete
+                path = parts[-1]
+                expanded_path = os.path.expanduser(path)
+                if '*' not in expanded_path and not expanded_path.endswith(os.sep):
+                    expanded_path += '*'
+                files = glob.glob(expanded_path)
+                if files:
+                    common_prefix = os.path.commonprefix(files)
+                    if common_prefix != path:
+                        self.text_widget.delete(f"{line_index}+{len(parts[0])}c", "insert lineend")
+                        self.text_widget.insert(f"{line_index}+{len(parts[0])}c", common_prefix)
+        return "break"  # Prevent default tab behavior
+
     def update_prompt_on_newline(self, event):
         if event.keysym == "Return":
             self.update_prompt()
