@@ -129,6 +129,7 @@ class TerminalEmulator(tk.Tk):
                 "systeminfo: Display system information\n"
                 "edit <file>: Open and display the contents of a file\n"
                 "open: Open the current directory in the system's default file manager\n"
+                "issue <issue_text>: Submit an issue to the Nebula Terminal Development Community\n"
             )
             self.text_widget.insert(tk.END, "\n\n" + help_text)
             return  # Avoid updating the prompt after showing help
@@ -207,8 +208,30 @@ class TerminalEmulator(tk.Tk):
             except Exception as e:
                 self.text_widget.insert(tk.END, f"\nFailed to open directory: {str(e)}. Please check your system settings or permissions.\n")
             return  # Avoid updating the prompt after opening directory
+        elif command == "issue" and len(command_parts) > 1:
+            try:
+                import requests
+                issue_text = " ".join(command_parts[1:])
+                issue_count = getattr(self, 'issue_count', 0) + 1
+                setattr(self, 'issue_count', issue_count)
+                formatted_issue_text = f"**Community Issue #{issue_count}**:\n```{issue_text}```"
+                discord_webhook_url = "https://discord.com/api/webhooks/1251500620989595659/-T8_pur4o5Nirj9mdTaXcvOzR6idR9FB0iWaiyW0WmjXSTVF-IXj6aJZRjgGKyUaHui8"
+                data = {
+                    "content": formatted_issue_text,
+                    "username": "Nebula Terminal Community Issues",
+                    #"avatar_url": "https://example.com/image.png"  # Optional: Add an avatar URL if desired
+                }
+                response = requests.post(discord_webhook_url, json=data)
+                if response.status_code == 204:
+                    self.text_widget.insert(tk.END, "\nIssue submitted to Discord. Thank you!\n")
+                else:
+                    self.text_widget.insert(tk.END, f"\nFailed to submit issue to Discord: HTTP {response.status_code}\n")
+            except Exception as e:
+                self.text_widget.insert(tk.END, f"\nFailed to submit issue to Discord: {str(e)}\n")
+            return  # Avoid updating the prompt after submitting issue
         self.update_prompt()
 
+        
     def increase_font_size(self, event):
         self.font_size += 1
         self.text_widget.config(font=(self.font_family, self.font_size))
@@ -225,3 +248,4 @@ def initialize_terminal():
 
 if __name__ == "__main__":
     initialize_terminal()
+
