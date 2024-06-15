@@ -4,7 +4,8 @@ import subprocess
 import getpass  # Import getpass to get the username
 from config import settings  # Import settings from config.py
 import time
-import glob  
+import glob
+import socket
 
 class TerminalEmulator(tk.Tk):
     def __init__(self):
@@ -33,24 +34,60 @@ class TerminalEmulator(tk.Tk):
         self.resizable(True, True)  # Allow the window to be resizable
 
     def initial_prompt(self):
-        # Display initializing messages
-        self.text_widget.insert(tk.END, "Initializing Terminal...\n", "bold")
-        self.text_widget.insert(tk.END, f"User: {getpass.getuser()}\n", "bold")
-        self.text_widget.insert(tk.END, "Access Granted\n", "bold")
+        # Get the IP address of the user
+        user_ip = socket.gethostbyname(socket.gethostname())
         
-        def countdown(i):
-            if i > 0:
-                self.text_widget.delete("end-2l", "end-1l")
-                self.text_widget.insert(tk.END, f"Continuing in {i}...\n", "bold")
-                self.text_widget.update()
-                self.after(1000, countdown, i-1)
-            else:
-                self.text_widget.delete("1.0", tk.END)
-                prompt = f"{self.current_directory}> "
-                self.text_widget.insert(tk.END, prompt, "bold")  # Apply bold tag to prompt
-                self.text_widget.see(tk.END)
-        
-        countdown(5)
+        # Check if the user IP is in a previously stored list of IPs
+        try:
+            with open("user_ips.txt", "r+") as file:
+                known_ips = file.read().splitlines()
+                if user_ip not in known_ips:
+                    # Display initializing messages if IP is not known
+                    self.text_widget.insert(tk.END, "Initializing Terminal...\n", "bold")
+                    self.text_widget.insert(tk.END, f"User: {getpass.getuser()}\n", "bold")
+                    self.text_widget.insert(tk.END, "Access Granted\n", "bold")
+                    file.write(user_ip + "\n")
+                    
+                    def countdown(i):
+                        if i > 0:
+                            self.text_widget.delete("end-2l", "end-1l")
+                            self.text_widget.insert(tk.END, f"Continuing in {i}...\n", "bold")
+                            self.text_widget.update()
+                            self.after(1000, countdown, i-1)
+                        else:
+                            self.text_widget.delete("1.0", tk.END)
+                            prompt = f"{self.current_directory}> "
+                            self.text_widget.insert(tk.END, prompt, "bold")  # Apply bold tag to prompt
+                            self.text_widget.see(tk.END)
+                    
+                    countdown(5)
+                else:
+                    # If IP is known, just show the prompt
+                    prompt = f"{self.current_directory}> "
+                    self.text_widget.insert(tk.END, prompt, "bold")  # Apply bold tag to prompt
+                    self.text_widget.see(tk.END)
+        except FileNotFoundError:
+            # If the file doesn't exist, create it and write the current IP
+            with open("user_ips.txt", "w") as file:
+                file.write(user_ip + "\n")
+            # Display initializing messages if file is not found (first run)
+            self.text_widget.insert(tk.END, "Initializing Terminal...\n", "bold")
+            self.text_widget.insert(tk.END, f"User: {getpass.getuser()}\n", "bold")
+            self.text_widget.insert(tk.END, "Access Granted\n", "bold")
+            
+            def countdown(i):
+                if i > 0:
+                    self.text_widget.delete("end-2l", "end-1l")
+                    self.text_widget.insert(tk.END, f"Continuing in {i}...\n", "bold")
+                    self.text_widget.update()
+                    self.after(1000, countdown, i-1)
+                else:
+                    self.text_widget.delete("1.0", tk.END)
+                    prompt = f"{self.current_directory}> "
+                    self.text_widget.insert(tk.END, prompt, "bold")  # Apply bold tag to prompt
+                    self.text_widget.see(tk.END)
+            
+            countdown(5)
 
     def handle_unknown_command(self, command):
         self.text_widget.insert(tk.END, f"Command '{command}' not recognized. Type 'help' for a list of available commands.\n", "bold")
