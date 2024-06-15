@@ -3,6 +3,7 @@
 - Theming 
 - Better way to save the users data astead of using IPs
 - More customizable settings
+- Plugin system
 
 # Bugs that need to be fixed 
 - The customizable settings are not working
