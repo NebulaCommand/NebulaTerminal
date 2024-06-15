@@ -1,6 +1,7 @@
 import difflib
 import glob
 import os
+import shutil
 import socket
 import subprocess
 import time
@@ -100,7 +101,7 @@ class TerminalEmulator(tk.Tk):
             parts = line_text.split()
             if len(parts) == 1:
                 # Command autocomplete
-                commands = ["exit", "go", "cls", "clear", "help", "code", "dir", "echo", "mkdir", "settings", "tasklist", "systeminfo", "edit", "open"]
+                commands = [ "ping", "exit", "go", "cls", "clear", "help", "code", "dir", "echo", "mkdir", "settings", "tasklist", "systeminfo", "edit", "open"]
                 matches = [c for c in commands if c.startswith(parts[0])]
                 if matches:
                     self.show_autocomplete_dropdown(matches, line_index)
@@ -138,7 +139,7 @@ class TerminalEmulator(tk.Tk):
         self.text_widget.focus_set()  # Return focus to the text widget
 
     def suggest_correction(self, input_text):
-        commands = ["exit", "go", "cls", "clear", "help", "code", "dir", "echo", "mkdir", "settings", "tasklist", "systeminfo", "edit", "open"]
+        commands = ["ping", "exit", "go", "cls", "clear", "help", "code", "dir", "echo", "mkdir", "settings", "tasklist", "systeminfo", "edit", "open"]
         directories = [d for d in os.listdir(self.current_directory) if os.path.isdir(os.path.join(self.current_directory, d))]
         files = [f for f in os.listdir(self.current_directory) if os.path.isfile(os.path.join(self.current_directory, f))]
         suggestions = []
@@ -206,6 +207,7 @@ class TerminalEmulator(tk.Tk):
                 help_text = (
                     "General Commands:\n"
                     "  help: Show this help message\n"
+                    "  date: Display the current date and time\n"
                     "  exit: Go to a previous directory\n"
                     "  go <path>: Navigate to a directory\n"
                     "  cls, clear: Clear the terminal screen\n"
@@ -222,6 +224,10 @@ class TerminalEmulator(tk.Tk):
                     "  tasklist: Display all running processes\n"
                     "  systeminfo: Display system information\n"
                     "  issue <issue_text>: Submit an issue to the Nebula Terminal Development Community\n"
+                    "  ping <target>: Ping the specified target\n"
+                    "  ssh <target>: Establish an SSH connection to the specified target\n"
+                    "  diff <file1> <file2>: Compare the contents of two files\n"
+                    "  listports: List all open ports on the system\n"
                 )
                 self.text_widget.insert(tk.END, "\n\n" + help_text)
             elif len(command_parts) > 1:
@@ -242,7 +248,12 @@ class TerminalEmulator(tk.Tk):
                     "edit": "edit <file>: Open and display the contents of the specified file.",
                     "open": "open: Open the current directory in the system's default file manager.",
                     "issue": "issue <issue_text>: Submit an issue to the Nebula Terminal Development Community.",
-                    "openfile": "openfile <file_path>: Open and display the contents of the specified file."
+                    "openfile": "openfile <file_path>: Open and display the contents of the specified file.",
+                    "ping": "ping <target>: Ping the specified target.",
+                    "ssh": "ssh <target>: Establish an SSH connection to the specified target.",
+                    "date": "date: Display the current date and time.",
+                    "diff": "diff <file1> <file2>: Compare the contents of two files.",
+                    "listports": "listports: List all open ports on the system."
                 }
                 help_message = detailed_help.get(detailed_command, f"No detailed help available for: {detailed_command}")
                 self.text_widget.insert(tk.END, "\n\n" + help_message)
@@ -355,11 +366,79 @@ class TerminalEmulator(tk.Tk):
             except Exception as e:
                 self.text_widget.insert(tk.END, f"\nFailed to open file: {str(e)}. Please check the file and try again.\n")
             return  # Avoid updating the prompt after opening file
+        elif command == "ping" and len(command_parts) > 1:
+            target = command_parts[1]
+            try:
+                output = subprocess.check_output(["ping", target], text=True)
+                self.text_widget.insert(tk.END, f"\nPing results for {target}:\n{output}\n")
+            except Exception as e:
+                self.text_widget.insert(tk.END, f"\nFailed to ping {target}: {str(e)}\n")
+            return  # Avoid updating the prompt after pinging
+        elif command == "ssh" and len(command_parts) > 1:
+            target = command_parts[1]
+            try:
+                ssh_output = subprocess.check_output(["ssh", target], text=True)
+                self.text_widget.insert(tk.END, f"\nSSH connection to {target} established:\n{ssh_output}\n")
+            except subprocess.CalledProcessError as e:
+                self.text_widget.insert(tk.END, f"\nSSH connection to {target} failed with error code {e.returncode}.\n")
+            except Exception as e:
+                self.text_widget.insert(tk.END, f"\nFailed to establish SSH connection to {target}: {str(e)}\n")
+            return  # Avoid updating the prompt after SSH command
+        elif command == "date":
+            try:
+                current_date = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                self.text_widget.insert(tk.END, f"\n\nCurrent date and time: {current_date}\n")
+            except Exception as e:
+                self.text_widget.insert(tk.END, f"\nFailed to get current date and time: {str(e)}\n")
+            return  # Avoid updating the prompt after displaying date and time
+        elif command == "diskusage":
+            try:
+                disk_usage = shutil.disk_usage("/")
+                total, used, free = disk_usage.total, disk_usage.used, disk_usage.free
+                self.text_widget.insert(tk.END, f"\nDisk Usage: Total: {total} bytes, Used: {used} bytes, Free: {free} bytes\n")
+            except Exception as e:
+                self.text_widget.insert(tk.END, f"\nFailed to get disk usage: {str(e)}\n")
+            return  # Avoid updating the prompt after displaying disk usage
+        elif command == "diff" and len(command_parts) > 2:
+            file1_path = os.path.join(self.current_directory, command_parts[1])
+            file2_path = os.path.join(self.current_directory, command_parts[2])
+            try:
+                with open(file1_path, 'r') as file1, open(file2_path, 'r') as file2:
+                    file1_lines = file1.readlines()
+                    file2_lines = file2.readlines()
+                diff = difflib.unified_diff(file1_lines, file2_lines, fromfile=file1_path, tofile=file2_path)
+                diff_output = ''.join(diff)
+                if diff_output:
+                    self.text_widget.insert(tk.END, f"\nDifferences between {file1_path} and {file2_path}:\n{diff_output}\n")
+                else:
+                    self.text_widget.insert(tk.END, f"\nNo differences found between {file1_path} and {file2_path}.\n")
+            except FileNotFoundError as e:
+                self.text_widget.insert(tk.END, f"\nFile not found: {str(e)}. Please check the file paths and try again.\n")
+            except Exception as e:
+                self.text_widget.insert(tk.END, f"\nFailed to compare files: {str(e)}.\n")
+            return  # Avoid updating the prompt after diff command
+        elif command == "listports":
+            try:
+                import socket
+                open_ports = []
+                for port in range(1, 1025):
+                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    result = sock.connect_ex(('localhost', port))
+                    if result == 0:
+                        open_ports.append(port)
+                    sock.close()
+                if open_ports:
+                    ports_str = ', '.join(map(str, open_ports))
+                    self.text_widget.insert(tk.END, f"\nOpen ports: {ports_str}\n")
+                else:
+                    self.text_widget.insert(tk.END, "\nNo open ports found.\n")
+            except Exception as e:
+                self.text_widget.insert(tk.END, f"\nFailed to list open ports: {str(e)}\n")
+            return  # Avoid updating the prompt after listing ports
         else:
             self.handle_unknown_command(command)
-            return
+            return        
         self.update_prompt()
-
         
     def increase_font_size(self, event):
         self.font_size += 1
