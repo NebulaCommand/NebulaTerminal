@@ -1,11 +1,13 @@
-themes = [
-    {"name": "galaxy_default", "background_color": "#000000", "transparency": False},
-    {"name": "galaxy_light", "background_color": "#FFFFFF", "transparency": False},
-    {"name": "galaxy_blue", "background_color": "#0000FF", "transparency": False},
-    {"name": "galaxy_green", "background_color": "#00FF00", "transparency": False},
-    {"name": "galaxy_red", "background_color": "#FF0000", "transparency": False},
-    {"name": "galaxy_transparent_dark", "background_color": "#000000", "transparency": True},
-    {"name": "galaxy_transparent_light", "background_color": "#FFFFFF", "transparency": True},
+galaxy_themes = [
+    (0, "Default Terminal Theme", "#000000"),
+    (1, "Andromeda Haze", "#A28497"),
+    (2, "Milky Way Glow", "#FFD700"),
+    (3, "Orion Nebula", "#FF4500"),
+    (4, "Black Hole Eclipse", "#000000"),
+    (5, "Starburst Supernova", "#FF6347"),
+    (6, "Cosmic Ocean", "#00BFFF"),
+    (7, "Galactic Bloom", "#32CD32")
 ]
+
 
 # Implementing customizable themes later on
