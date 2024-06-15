@@ -1,0 +1,3 @@
+- Implement theming
+- Add feedback buttons 
+- More to come.
