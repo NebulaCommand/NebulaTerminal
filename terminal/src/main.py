@@ -98,6 +98,7 @@ class TerminalEmulator(tk.Tk):
                 "tasklist: Display all running processes\n"
                 "systeminfo: Display system information\n"
                 "edit <file>: Open and display the contents of a file\n"
+                "open: Open the current directory in the system's default file manager\n"
             )
             self.text_widget.insert(tk.END, "\n\n" + help_text)
             return  # Avoid updating the prompt after showing help
@@ -169,9 +170,14 @@ class TerminalEmulator(tk.Tk):
             except Exception as e:
                 self.text_widget.insert(tk.END, f"\nFailed to retrieve system information: {str(e)}\n")
             return  # Avoid updating the prompt after showing system info
-        self.text_widget.delete(line_index, "insert lineend")
+        elif command == "open":
+            try:
+                subprocess.run(["explorer", self.current_directory], check=True)
+                self.text_widget.insert(tk.END, f"\nOpened directory: {self.current_directory}\n")
+            except Exception as e:
+                self.text_widget.insert(tk.END, f"\nFailed to open directory: {str(e)}\n")
+            return  # Avoid updating the prompt after opening directory
         self.update_prompt()
-
 def initialize_terminal():
     terminal_app = TerminalEmulator()
     terminal_app.mainloop()
