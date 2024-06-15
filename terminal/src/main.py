@@ -18,7 +18,6 @@ class TerminalEmulator(tk.Tk):
         self.current_directory = os.path.expanduser("~/Downloads")
         self.text_widget.bind("<Return>", self.process_command)
         self.text_widget.bind("<KeyRelease>", self.update_prompt_on_newline)
-        self.text_widget.bind("<Tab>", self.autocomplete, add="+")  # Bind tab key for autocomplete
         self.initial_prompt()
 
     def apply_settings(self):
@@ -209,6 +208,17 @@ class TerminalEmulator(tk.Tk):
                 self.text_widget.insert(tk.END, f"\nFailed to open directory: {str(e)}. Please check your system settings or permissions.\n")
             return  # Avoid updating the prompt after opening directory
         self.update_prompt()
+
+    def increase_font_size(self, event):
+        self.font_size += 1
+        self.text_widget.config(font=(self.font_family, self.font_size))
+        return "break"
+
+    def decrease_font_size(self, event):
+        self.font_size -= 1
+        self.text_widget.config(font=(self.font_family, self.font_size))
+        return "break"
+
 def initialize_terminal():
     terminal_app = TerminalEmulator()
     terminal_app.mainloop()
