@@ -80,9 +80,21 @@ class TerminalEmulator(tk.Tk):
                 "settings -<setting> <value>: Change the specified setting\n"
                 "tasklist: Display all running processes\n"
                 "systeminfo: Display system information\n"
+                "edit <file>: Open and display the contents of a file\n"
             )
             self.text_widget.insert(tk.END, "\n\n" + help_text)
             return  # Avoid updating the prompt after showing help
+        elif command == "edit" and len(command_parts) > 1:
+            file_path = os.path.join(self.current_directory, command_parts[1])
+            try:
+                with open(file_path, 'r') as file:
+                    file_contents = file.read()
+                self.text_widget.insert(tk.END, f"\n{file_contents}\n")
+            except FileNotFoundError:
+                self.text_widget.insert(tk.END, f"\nFile not found: {file_path}\n")
+            except Exception as e:
+                self.text_widget.insert(tk.END, f"\nError opening file: {str(e)}\n")
+            return  # Avoid updating the prompt after displaying file contents
         elif command == "code":
             try:
                 subprocess.run(["code", self.current_directory])
