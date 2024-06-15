@@ -52,6 +52,9 @@ class TerminalEmulator(tk.Tk):
         
         countdown(5)
 
+    def handle_unknown_command(self, command):
+        self.text_widget.insert(tk.END, f"Command '{command}' not recognized. Type 'help' for a list of available commands.\n", "bold")
+
     def autocomplete(self, event):
         line_index = self.text_widget.index("insert linestart")
         line_text = self.text_widget.get(line_index, "insert lineend").strip()
@@ -229,6 +232,9 @@ class TerminalEmulator(tk.Tk):
             except Exception as e:
                 self.text_widget.insert(tk.END, f"\nFailed to submit issue to Discord: {str(e)}\n")
             return  # Avoid updating the prompt after submitting issue
+        else:
+            self.handle_unknown_command(command)
+            return
         self.update_prompt()
 
         
@@ -248,4 +254,6 @@ def initialize_terminal():
 
 if __name__ == "__main__":
     initialize_terminal()
+
+
 
