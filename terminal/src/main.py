@@ -1,3 +1,4 @@
+import difflib
 import tkinter as tk
 import os
 import subprocess
@@ -102,8 +103,7 @@ class TerminalEmulator(tk.Tk):
                 commands = ["exit", "go", "cls", "clear", "help", "code", "dir", "echo", "mkdir", "settings", "tasklist", "systeminfo", "edit", "open"]
                 matches = [c for c in commands if c.startswith(parts[0])]
                 if matches:
-                    self.text_widget.delete(line_index, "insert lineend")
-                    self.text_widget.insert(line_index, matches[0] + " ", "command")
+                    self.show_autocomplete_dropdown(matches, line_index)
             else:
                 # File path autocomplete
                 path = parts[-1]
@@ -114,9 +114,55 @@ class TerminalEmulator(tk.Tk):
                 if files:
                     common_prefix = os.path.commonprefix(files)
                     if common_prefix != path:
-                        self.text_widget.delete(f"{line_index}+{len(parts[0])}c", "insert lineend")
-                        self.text_widget.insert(f"{line_index}+{len(parts[0])}c", common_prefix, "path")
+                        self.show_autocomplete_dropdown(files, line_index, len(parts[0]))
         return "break"  # Prevent default tab behavior
+
+    def show_autocomplete_dropdown(self, options, line_index, prefix_len=0):
+        # Calculate position for dropdown
+        x, y, _, _ = self.text_widget.bbox(line_index)
+        window_x = self.text_widget.winfo_rootx() + x
+        window_y = self.text_widget.winfo_rooty() + y + self.text_widget.winfo_height()
+
+        # Create dropdown menu
+        menu = tk.Menu(self.text_widget, tearoff=0)
+        for option in options:
+            menu.add_command(label=option, command=lambda opt=option: self.insert_autocomplete(opt, line_index, prefix_len))
+        menu.tk_popup(window_x, window_y, 0)
+
+    def insert_autocomplete(self, text, line_index, prefix_len):
+        self.text_widget.delete(line_index, "insert lineend")
+        if prefix_len > 0:
+            self.text_widget.insert(f"{line_index}+{prefix_len}c", text + " ", "path")
+        else:
+            self.text_widget.insert(line_index, text + " ", "command")
+        self.text_widget.focus_set()  # Return focus to the text widget
+
+    def suggest_correction(self, input_text):
+        commands = ["exit", "go", "cls", "clear", "help", "code", "dir", "echo", "mkdir", "settings", "tasklist", "systeminfo", "edit", "open"]
+        directories = [d for d in os.listdir(self.current_directory) if os.path.isdir(os.path.join(self.current_directory, d))]
+        files = [f for f in os.listdir(self.current_directory) if os.path.isfile(os.path.join(self.current_directory, f))]
+        suggestions = []
+
+        # Check for command suggestions
+        command_suggestions = difflib.get_close_matches(input_text, commands, n=1, cutoff=0.7)
+        if command_suggestions:
+            suggestions.extend(command_suggestions)
+
+        # Check for directory suggestions
+        directory_suggestions = difflib.get_close_matches(input_text, directories, n=1, cutoff=0.7)
+        if directory_suggestions:
+            suggestions.extend(directory_suggestions)
+
+        # Check for file suggestions
+        file_suggestions = difflib.get_close_matches(input_text, files, n=1, cutoff=0.7)
+        if file_suggestions:
+            suggestions.extend(file_suggestions)
+
+        if suggestions:
+            suggestion_text = f"Did you mean: {', '.join(suggestions)}?"
+            self.text_widget.insert(tk.END, suggestion_text + "\n", "bold")
+        else:
+            self.text_widget.insert(tk.END, "No suggestions found.\n", "bold")
 
     def update_prompt_on_newline(self, event):
         if event.keysym == "Return":
@@ -128,6 +174,7 @@ class TerminalEmulator(tk.Tk):
         self.text_widget.insert("insert", prompt, "bold")  # Apply bold tag to prompt
         self.text_widget.see(tk.END)
 
+    
     def process_command(self, event):
         line_index = self.text_widget.index("insert linestart")
         line_text = self.text_widget.get(line_index, "insert lineend")
@@ -155,24 +202,50 @@ class TerminalEmulator(tk.Tk):
         elif command == "cls" or command == "clear":
             self.text_widget.delete("1.0", tk.END)
         elif command == "help":
-            help_text = (
-                "exit: Go to a previous directory\n"
-                "go <path>: Navigate to a directory\n"
-                "cls, clear: Clear the terminal screen\n"
-                "help: Show this help message\n"
-                "code: Open the current directory in Visual Studio Code\n"
-                "dir: List the contents of the current directory\n"
-                "echo <text>: Print the specified text\n"
-                "mkdir <directory_name>: Create a new directory\n"
-                "settings -<setting> <value>: Change the specified setting\n"
-                "tasklist: Display all running processes\n"
-                "systeminfo: Display system information\n"
-                "edit <file>: Open and display the contents of a file\n"
-                "open: Open the current directory in the system's default file manager\n"
-                "issue <issue_text>: Submit an issue to the Nebula Terminal Development Community\n"
-                "openfile <file_path>: Open and display the contents of a file\n"
-            )
-            self.text_widget.insert(tk.END, "\n\n" + help_text)
+            if len(command_parts) == 1:
+                help_text = (
+                    "General Commands:\n"
+                    "  help: Show this help message\n"
+                    "  exit: Go to a previous directory\n"
+                    "  go <path>: Navigate to a directory\n"
+                    "  cls, clear: Clear the terminal screen\n"
+                    "\nFile Management Commands:\n"
+                    "  dir: List the contents of the current directory\n"
+                    "  edit <file>: Open and display the contents of a file\n"
+                    "  mkdir <directory_name>: Create a new directory\n"
+                    "  open: Open the current directory in the system's default file manager\n"
+                    "  openfile <file_path>: Open and display the contents of a file\n"
+                    "\nUtility Commands:\n"
+                    "  code: Open the current directory in Visual Studio Code\n"
+                    "  echo <text>: Print the specified text\n"
+                    "  settings -<setting> <value>: Change the specified setting\n"
+                    "  tasklist: Display all running processes\n"
+                    "  systeminfo: Display system information\n"
+                    "  issue <issue_text>: Submit an issue to the Nebula Terminal Development Community\n"
+                )
+                self.text_widget.insert(tk.END, "\n\n" + help_text)
+            elif len(command_parts) > 1:
+                detailed_command = command_parts[1]
+                detailed_help = {
+                    "exit": "exit: Exit the terminal or go to the previous directory.",
+                    "go": "go <path>: Navigate to the specified directory path.",
+                    "cls": "cls, clear: Clear the terminal screen.",
+                    "clear": "cls, clear: Clear the terminal screen.",
+                    "help": "help: Show this help message or detailed help for a specific command.",
+                    "code": "code: Open the current directory in Visual Studio Code.",
+                    "dir": "dir: List all files and directories in the current directory.",
+                    "echo": "echo <text>: Print the specified text to the terminal.",
+                    "mkdir": "mkdir <directory_name>: Create a new directory with the specified name.",
+                    "settings": "settings -<setting> <value>: Change the specified setting to the given value.",
+                    "tasklist": "tasklist: Display all currently running processes.",
+                    "systeminfo": "systeminfo: Display detailed system information.",
+                    "edit": "edit <file>: Open and display the contents of the specified file.",
+                    "open": "open: Open the current directory in the system's default file manager.",
+                    "issue": "issue <issue_text>: Submit an issue to the Nebula Terminal Development Community.",
+                    "openfile": "openfile <file_path>: Open and display the contents of the specified file."
+                }
+                help_message = detailed_help.get(detailed_command, f"No detailed help available for: {detailed_command}")
+                self.text_widget.insert(tk.END, "\n\n" + help_message)
             return  # Avoid updating the prompt after showing help
         elif command == "edit" and len(command_parts) > 1:
             file_path = os.path.join(self.current_directory, command_parts[1])
@@ -304,3 +377,4 @@ def initialize_terminal():
 
 if __name__ == "__main__":
     initialize_terminal()
+
