@@ -133,6 +133,7 @@ class TerminalEmulator(tk.Tk):
                 "edit <file>: Open and display the contents of a file\n"
                 "open: Open the current directory in the system's default file manager\n"
                 "issue <issue_text>: Submit an issue to the Nebula Terminal Development Community\n"
+                "openfile <file_path>: Open and display the contents of a file\n"
             )
             self.text_widget.insert(tk.END, "\n\n" + help_text)
             return  # Avoid updating the prompt after showing help
@@ -232,6 +233,18 @@ class TerminalEmulator(tk.Tk):
             except Exception as e:
                 self.text_widget.insert(tk.END, f"\nFailed to submit issue to Discord: {str(e)}\n")
             return  # Avoid updating the prompt after submitting issue
+        
+        elif command == "openfile" and len(command_parts) > 1:
+            file_path = os.path.join(self.current_directory, command_parts[1])
+            try:
+                with open(file_path, 'r') as file:
+                    file_content = file.read()
+                self.text_widget.insert(tk.END, f"\nContents of {file_path}:\n{file_content}\n")
+            except FileNotFoundError:
+                self.text_widget.insert(tk.END, f"\nFile not found: {file_path}. Please check the file path and try again.\n")
+            except Exception as e:
+                self.text_widget.insert(tk.END, f"\nFailed to open file: {str(e)}. Please check the file and try again.\n")
+            return  # Avoid updating the prompt after opening file
         else:
             self.handle_unknown_command(command)
             return
