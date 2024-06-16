@@ -3,11 +3,11 @@ import glob
 import os
 import shutil
 import socket
-import subprocess
 import time
 import tkinter as tk
 from config import settings  # Import settings from config.py
 import getpass  # Import getpass to get the username
+import subprocess
 
 class TerminalEmulator(tk.Tk):
     def __init__(self):
@@ -468,7 +468,7 @@ class TerminalEmulator(tk.Tk):
             return  # Avoid updating the prompt after renaming file
         elif command.startswith("git clone"):
             try:
-                import subprocess
+                #import subprocess
                 git_command = command.split()
                 if len(git_command) < 3:
                     self.text_widget.insert(tk.END, "\nUsage: git clone <repository-url>\n")
