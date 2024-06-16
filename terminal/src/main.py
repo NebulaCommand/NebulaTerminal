@@ -8,6 +8,7 @@ import tkinter as tk
 from config import settings  # Import settings from config.py
 import getpass  # Import getpass to get the username
 import subprocess
+import shlex  # Import shlex to safely handle command line parsing
 
 class TerminalEmulator(tk.Tk):
     def __init__(self):
