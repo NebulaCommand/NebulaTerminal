@@ -17,6 +17,8 @@ class TerminalEmulator(tk.Tk):
         self.text_widget.tag_configure("bold", font=(self.font_family, self.font_size, "bold"))  # Configure bold tag for directory lines
         self.text_widget.tag_configure("command", foreground="blue")  # Syntax highlighting for commands
         self.text_widget.tag_configure("path", foreground="green")  # Syntax highlighting for paths
+        self.text_widget.tag_configure("error", foreground="red")  # Syntax highlighting for error messages
+        self.text_widget.tag_configure("success", foreground="green")  # Syntax highlighting for success messages
         self.text_widget.pack(expand=True, fill='both')
         self.current_directory = os.path.expanduser("~/Downloads")
         self.text_widget.bind("<Return>", self.process_command)
@@ -92,7 +94,7 @@ class TerminalEmulator(tk.Tk):
             countdown(5)
 
     def handle_unknown_command(self, command):
-        self.text_widget.insert(tk.END, f"Command '{command}' not recognized. Type 'help' for a list of available commands.\n", "bold")
+        self.text_widget.insert(tk.END, f"Command '{command}' not recognized. Type 'help' for a list of available commands.\n", "error")
 
     def autocomplete(self, event):
         line_index = self.text_widget.index("insert linestart")
@@ -503,4 +505,3 @@ def initialize_terminal():
 
 if __name__ == "__main__":
     initialize_terminal()
-
